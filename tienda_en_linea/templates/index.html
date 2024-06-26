@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+    <div class="content">
+        <h1>Bienvenido a Tu Tienda en Línea</h1>
+
+        <p>Para ver un listado general de productos, clientes y pedidos, haz clic <a href="{{ url_for('listado_general') }}">aquí</a>.</p>
+    </div>
+{% endblock %}

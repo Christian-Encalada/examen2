@@ -1,15 +1,14 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
-# Configurar la aplicación Flask y la base de datos
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://tu_usuario:tu_contraseña@localhost/tienda_en_linea'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:12345@localhost/tiendaLinea'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# Definir los modelos
+# Definición de modelos
 class Producto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
@@ -54,53 +53,91 @@ class Pedido(db.Model):
             'cliente': self.cliente.serialize
         }
 
-# Definir las rutas de la API
+# Rutas para las vistas y operaciones CRUD
 @app.route('/')
 def index():
-    return "Bienvenido a la Tienda en Línea"
-
-# Rutas para productos
-@app.route('/productos', methods=['GET'])
-def get_productos():
     productos = Producto.query.all()
-    return jsonify([p.serialize for p in productos])
-
-@app.route('/producto', methods=['POST'])
-def add_producto():
-    data = request.get_json()
-    nuevo_producto = Producto(nombre=data['nombre'], precio=data['precio'], stock=data['stock'])
-    db.session.add(nuevo_producto)
-    db.session.commit()
-    return jsonify(nuevo_producto.serialize)
-
-# Rutas para clientes
-@app.route('/clientes', methods=['GET'])
-def get_clientes():
     clientes = Cliente.query.all()
-    return jsonify([c.serialize for c in clientes])
-
-@app.route('/cliente', methods=['POST'])
-def add_cliente():
-    data = request.get_json()
-    nuevo_cliente = Cliente(nombre=data['nombre'], email=data['email'])
-    db.session.add(nuevo_cliente)
-    db.session.commit()
-    return jsonify(nuevo_cliente.serialize)
-
-# Rutas para pedidos
-@app.route('/pedidos', methods=['GET'])
-def get_pedidos():
     pedidos = Pedido.query.all()
-    return jsonify([p.serialize for p in pedidos])
+    return render_template('index.html', productos=productos, clientes=clientes, pedidos=pedidos)
 
-@app.route('/pedido', methods=['POST'])
-def add_pedido():
-    data = request.get_json()
-    nuevo_pedido = Pedido(cliente_id=data['cliente_id'])
-    db.session.add(nuevo_pedido)
+@app.route('/productos')
+def productos():
+    productos = Producto.query.all()
+    return render_template('productos.html', productos=productos)
+
+@app.route('/clientes')
+def clientes():
+    clientes = Cliente.query.all()
+    return render_template('clientes.html', clientes=clientes)
+
+@app.route('/pedidos')
+def pedidos():
+    pedidos = Pedido.query.all()
+    return render_template('pedidos.html', pedidos=pedidos)
+
+@app.route('/listado_general')
+def listado_general():
+    productos = Producto.query.all()
+    clientes = Cliente.query.all()
+    pedidos = Pedido.query.all()
+    return render_template('listado_general.html', productos=productos, clientes=clientes, pedidos=pedidos)
+
+@app.route('/formulario_producto', methods=['GET', 'POST'])
+def formulario_producto():
+    if request.method == 'POST':
+        nombre = request.form['nombre']
+        precio = request.form['precio']
+        stock = request.form['stock']
+        nuevo_producto = Producto(nombre=nombre, precio=float(precio), stock=int(stock))
+        db.session.add(nuevo_producto)
+        db.session.commit()
+        return redirect(url_for('productos'))
+    return render_template('formulario_producto.html')
+
+@app.route('/formulario_cliente', methods=['GET', 'POST'])
+def formulario_cliente():
+    if request.method == 'POST':
+        nombre = request.form['nombre']
+        email = request.form['email']
+        nuevo_cliente = Cliente(nombre=nombre, email=email)
+        db.session.add(nuevo_cliente)
+        db.session.commit()
+        return redirect(url_for('clientes'))
+    return render_template('formulario_cliente.html')
+
+@app.route('/formulario_pedido', methods=['GET', 'POST'])
+def formulario_pedido():
+    if request.method == 'POST':
+        cliente_id = request.form['cliente_id']
+        nuevo_pedido = Pedido(cliente_id=int(cliente_id))
+        db.session.add(nuevo_pedido)
+        db.session.commit()
+        return redirect(url_for('pedidos'))
+    return render_template('formulario_pedido.html')
+
+@app.route('/producto/delete/<int:id>', methods=['POST'])
+def delete_producto(id):
+    producto = Producto.query.get(id)
+    db.session.delete(producto)
     db.session.commit()
-    return jsonify(nuevo_pedido.serialize)
+    return redirect(url_for('productos'))
+
+@app.route('/cliente/delete/<int:id>', methods=['POST'])
+def delete_cliente(id):
+    cliente = Cliente.query.get(id)
+    db.session.delete(cliente)
+    db.session.commit()
+    return redirect(url_for('clientes'))
+
+@app.route('/pedido/delete/<int:id>', methods=['POST'])
+def delete_pedido(id):
+    pedido = Pedido.query.get(id)
+    db.session.delete(pedido)
+    db.session.commit()
+    return redirect(url_for('pedidos'))
 
 if __name__ == '__main__':
-    db.create_all()
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)

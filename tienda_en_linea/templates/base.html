@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('productos') }}">Productos</a></li>
+                <li><a href="{{ url_for('clientes') }}">Clientes</a></li>
+                <li><a href="{{ url_for('pedidos') }}">Pedidos</a></li>
+                <li><a href="{{ url_for('listado_general') }}">Listado General</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Tu Tienda en Línea</p>
+    </footer>
+
+    <a href="/" class="btn-back">Volver</a>
+</body>
+</html>
